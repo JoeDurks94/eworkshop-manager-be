@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+  seed = "ts-node prisma/seed.ts"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+}
+
+model Employee {
+  id                 Int                  @id @default(autoincrement())
+  name               String
+  role               Role
+  active             Boolean
+  allocated_jobs     AllocatedJobs[]
+  comments           Comments[]
+}
+
+model Customer {
+  id                 Int                  @id @default(autoincrement())
+  name               String
+  contact_name       String
+  contact_number     String
+  contact_email      String
+  using_vehicles     Vehicles[]           @relation("UsingCustomer")
+  owned_vehicles     Vehicles[]           @relation("OwningCustomer")
+}
+
+model Vehicles {
+  id                 Int                  @id @default(autoincrement())
+  vrm                String
+  vin                String
+  make               String
+  model              String
+  using_customer_id  Int
+  using_customer     Customer             @relation("UsingCustomer", fields: [using_customer_id], references: [id])
+  owning_customer_id Int
+  owning_customer    Customer             @relation("OwningCustomer", fields: [owning_customer_id], references: [id])
+  Jobcard            Jobcard[]
+}
+
+model Jobcard {
+  id                 Int                  @id @default(autoincrement())
+  jobcard_number     Int                  @unique
+  vehicle_id         Int
+  vehicle            Vehicles             @relation(fields: [vehicle_id], references: [id])
+  joblines           Joblines[]
+  allocated_jobs     AllocatedJobs[]
+}
+
+model Joblines {
+  id                 Int                  @id @default(autoincrement())
+  jobcard_id         Int      
+  jobcard_number     Jobcard              @relation(fields: [jobcard_id], references: [id])
+  description        String
+  time_allocated     Float
+  comments           Comments[]
+}
+
+model AllocatedJobs {
+  id                 Int                  @id @default(autoincrement())
+  jobcard_id         Int
+  jobcard            Jobcard              @relation(fields: [jobcard_id], references: [id])
+  employee_id        Int           
+  employee           Employee             @relation(fields: [employee_id], references: id)
+}
+
+model Comments {
+  id                 Int                  @id @default(autoincrement())
+  type               CommentType
+  comment            String
+  jobline_id         Int
+  joblines           Joblines            @relation(fields: [jobline_id], references: [id])
+  created_at         DateTime
+  employee_id        Int
+  employee           Employee            @relation(fields: [employee_id], references: [id])
+}
+
+enum Role {
+  MANAGER
+  RECEPTION
+  TECHNICIAN
+  SUPERUSER
+}
+
+enum CommentType {
+  INFORMATION
+  COMPLAINT
+  CAUSE
+  CURE
+}
